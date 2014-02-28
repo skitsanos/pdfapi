@@ -83,16 +83,26 @@ server.listen(4000, function (request, response)
 			{
 				console.log('\tgot application/json');
 
-				var jsonConfig = JSON.parse(request.post);
+				try
+				{
+					var jsonConfig = JSON.parse(request.post);
 
-				renderOptions.content = jsonConfig.content;
-				renderOptions.orientation = jsonConfig.orientation != undefined ? jsonConfig.orientation : 'portrait';
-				renderOptions.pageSize = jsonConfig.pageSize != undefined ? jsonConfig.pageSize : 'A4';
-				renderOptions.margin = jsonConfig.margin != undefined ? jsonConfig.margin : {left: '2.5cm', right: '2.5cm', top: '2.5cm', bottom: '1cm'};
-				renderOptions.header = jsonConfig.header != undefined ? jsonConfig.header : {height: '0.9cm', content: ''};
-				renderOptions.footer = jsonConfig.footer != undefined ? jsonConfig.footer : {height: '0.9cm', content: '<div style="text-align:center;"><small>%%pageNumber/%%totalPages</small></div>'};
-				console.log('\tparsed JSON object');
-				//console.log(JSON.stringify(renderOptions));
+					renderOptions.content = jsonConfig.content;
+					renderOptions.orientation = jsonConfig.orientation != undefined ? jsonConfig.orientation : 'portrait';
+					renderOptions.pageSize = jsonConfig.pageSize != undefined ? jsonConfig.pageSize : 'A4';
+					renderOptions.margin = jsonConfig.margin != undefined ? jsonConfig.margin : {left: '2.5cm', right: '2.5cm', top: '2.5cm', bottom: '1cm'};
+					renderOptions.header = jsonConfig.header != undefined ? jsonConfig.header : {height: '0.9cm', content: ''};
+					renderOptions.footer = jsonConfig.footer != undefined ? jsonConfig.footer : {height: '0.9cm', content: '<div style="text-align:center;"><small>%%pageNumber/%%totalPages</small></div>'};
+					console.log('\tparsed JSON object');
+
+				} catch (e)
+				{
+					console.log(e);
+
+					response.statusCode = 500;
+					response.write(JSON.stringify(e));
+					response.close();
+				}
 			}
 			else
 			{
