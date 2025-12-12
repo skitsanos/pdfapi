@@ -1,56 +1,95 @@
-### PDF API Web Server
+# PDF API Web Server
 
+> **⚠️ Archived Project**: This project is no longer maintained. PhantomJS has been deprecated since 2018. For modern HTML-to-PDF conversion, consider using [Puppeteer](https://pptr.dev/) or [Playwright](https://playwright.dev/).
 
-PDF Generation Web Served made on top of PahntomJS (http://phantomjs.org/). PhantomJS is a headless WebKit scriptable with a JavaScript API. It has fast and native support for various web standards: DOM handling, CSS selector, JSON, Canvas, and SVG.
+A lightweight REST API server for generating PDF documents from HTML content, built on PhantomJS.
 
-#### Requirements
-+ [PhantomJS](http://hantomjs.org/)
-+ [Nginx](http://nginx.com/)
+## Overview
 
-*pdfapi* accepts POST HTTP requests with HTML content and renders PDF document out of it. Only the follwoing Content Types are supported:
-+ text/plain
-+ text/html
-+ application/json
+PDF API accepts HTML content via HTTP POST requests and renders it into downloadable PDF documents using PhantomJS's WebKit rendering engine.
 
-Any other Content Type will be rejected by _pdfapi_ web server.
+## Requirements
 
-#### Page Formatting
+- [PhantomJS](http://phantomjs.org/)
+- [Nginx](http://nginx.com/)
 
-_application/json_ was added to support more complex configuration, such like custom headers and footers. When you post  HTTP request, please make sure that the following JSON message is sent to _pdfapi_ REST API:
+## Supported Content Types
 
-```javascript
-    {
-      content: 'your HTML content goes here',
-      pageSize: 'A4',
-      orientation: 'portrait',
-      margin: {left: '2.5cm', right: '2.5cm', top: '2.5cm', bottom: '1cm'},
-      header: {height: '0.9cm', content: ''},
-      footer: {height: '0.9cm', content: '<div style="text-align:center;"><small>%%pageNumber/%%totalPages</small></div>'}
-    }
+| Content Type | Description |
+|--------------|-------------|
+| `text/plain` | Raw HTML as plain text |
+| `text/html` | Standard HTML content |
+| `application/json` | HTML with page configuration options |
+
+## Usage
+
+### Basic Request
+
+Send HTML content directly:
+
+```bash
+curl -X POST -H "Content-Type: text/html" \
+  -d "<h1>Hello World</h1>" \
+  http://your-server/api
 ```
 
-Notice _%%pageNumber/%%totalPages_. You can use _%%pageNumber_ and/or _%%totalPages_ anywhere in the header or the footer content area and _pdfapi_ will turn them into numbers during the PDF rendering.
+### Advanced Request with Configuration
 
-When _text/plain_ or _text/html_ Content Type is used, HTTP POST request body will be used as is considering that whole content is HTML to be rendered and default page formattting will be use (exactly as stated on JSON example above).
+For custom page formatting, use JSON:
 
-#### Serving generated PDFs back to user
-
-To simplify PDF document serving and unload HTTP traffic from PDF Generator web server we simply redirect all /get/_filename_ calls to NGINX and for that we added the following rule:
-
+```json
+{
+  "content": "<h1>Your HTML content</h1>",
+  "pageSize": "A4",
+  "orientation": "portrait",
+  "margin": {
+    "left": "2.5cm",
+    "right": "2.5cm",
+    "top": "2.5cm",
+    "bottom": "1cm"
+  },
+  "header": {
+    "height": "0.9cm",
+    "content": ""
+  },
+  "footer": {
+    "height": "0.9cm",
+    "content": "<div style=\"text-align:center;\"><small>Page %%pageNumber of %%totalPages</small></div>"
+  }
+}
 ```
-location /get 
-        {
-                 alias /home/sites/_path_to_folder_with_pdfs/temp_files;
-        }
+
+### Dynamic Variables
+
+Use these placeholders in headers and footers:
+
+- `%%pageNumber` - Current page number
+- `%%totalPages` - Total number of pages
+
+## Server Configuration
+
+### Nginx Setup
+
+Add this rule to serve generated PDFs:
+
+```nginx
+location /get {
+    alias /path/to/temp_files;
+}
 ```
 
-#### Removing old generated files
-In our case we need generated PDFs for a period like 10 minutes, after that we can safely remove them. This can be done via cron with this simple instruction:
+### Automatic Cleanup
 
+Remove generated files older than 10 minutes via cron:
+
+```bash
+*/10 * * * * find /path/to/temp_files/ -mmin +10 -exec rm {} \;
 ```
-*/10 * * * * find /home/sites/_path_to_folder_with_pdfs/temp_files/ -mmin +10 -exec rm {} \;
-```
 
+## License
 
-#### REST API
-API documentation and details on REST API can be found on http://docs.pdfapi.apiary.io/
+MIT
+
+## Author
+
+[@skitsanos](https://github.com/skitsanos)
